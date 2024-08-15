@@ -71,6 +71,8 @@ def serve():
     from vllm.usage.usage_lib import UsageContext
 
     TOKEN = os.getenv("TOKEN")
+    if TOKEN is None:
+        raise ValueError("Please set the TOKEN environment variable")
 
     volume.reload()  # ensure we have the latest version of the weights
 
