@@ -108,13 +108,13 @@ def tgi_app():
     
     volume.reload()  # ensure we have the latest version of the weights
 
-    web_app = fastapi.FastAPI()
+    app = fastapi.FastAPI()
 
     http_bearer = fastapi.security.HTTPBearer(
         scheme_name="Bearer Token",
         description="See code for authentication details.",
     )
-    web_app.add_middleware(
+    app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
         allow_credentials=True,
@@ -140,7 +140,7 @@ def tgi_app():
         chat: List[ChatMessages]
 
   
-    @web_app.post("/v1/chat/classification")
+    @router.post("/v1/chat/classification")
     async def chat_classification_response(body: ChatClassificationRequestBody):
         chat = body.model_dump().get("chat",[])
 
@@ -167,7 +167,8 @@ def tgi_app():
         }
 
 
-    return web_app
+    app.include_router(router)
+    return app
 
 
 # @app.local_entrypoint()
