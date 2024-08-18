@@ -1,5 +1,4 @@
-import os
-import time
+from typing import Optional
 
 import modal
 
@@ -101,10 +100,26 @@ def tgi_app():
 
     from typing import List
     from pydantic import BaseModel
+    import logging
 
     TOKEN = os.getenv("TOKEN")
     if TOKEN is None:
         raise ValueError("Please set the TOKEN environment variable")
+    
+    # Create a logger
+    logger = logging.getLogger(MODEL_ALIAS)
+    logger.setLevel(logging.DEBUG)
+
+    # Create a handler for logging to stdout
+    stdout_handler = logging.StreamHandler()
+    stdout_handler.setLevel(logging.DEBUG)
+
+    # Create a formatter for the log messages
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    stdout_handler.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(stdout_handler)
     
     volume.reload()  # ensure we have the latest version of the weights
 
@@ -129,6 +144,24 @@ def tgi_app():
                 detail="Invalid authentication credentials",
             )
         return {"username": "authenticated_user"}
+    
+    @app.exception_handler(Exception)
+    def error_handler(request, exc):
+        status_code = 500
+        detail = "Internal Server Error"
+        logger.exception(exc)
+        if isinstance(exc, fastapi.HTTPException):
+            status_code = exc.status_code
+            detail = exc.detail
+        return fastapi.responses.JSONResponse(
+            status_code=status_code,
+            content={
+                "status": status_code,
+                "response": {
+                    "detail": detail,
+                }
+            },
+        )
 
     router = fastapi.APIRouter(dependencies=[fastapi.Depends(is_authenticated)])
 
@@ -137,11 +170,13 @@ def tgi_app():
         content: str
 
     class ChatClassificationRequestBody(BaseModel):
+        policies: Optional[List[str]] = None
         chat: List[ChatMessages]
 
   
     @router.post("/v1/chat/classification")
     async def chat_classification_response(body: ChatClassificationRequestBody):
+        policies = body.policies
         chat = body.model_dump().get("chat",[])
 
         print("Serving request for chat classification...")
@@ -154,24 +189,28 @@ def tgi_app():
         cleaned_response = response.lower().strip()
 
         if "unsafe" in cleaned_response:
-            is_unsafe = True
             split_cln_response = response.strip().split(os.linesep)
             subclass = split_cln_response[1] if len(split_cln_response) > 1 else None
+
+            if policies and subclass in policies:
+                is_unsafe = True
+            elif policies and subclass not in policies:
+                is_unsafe = False
+            else:
+                is_unsafe = True
         else:
             is_unsafe = False
 
         return {
-            "class": "unsafe" if is_unsafe else "safe",
-            "subclass": subclass,
-            "response": response
+            "status": 200,
+            "response": {
+                "class": "unsafe" if is_unsafe else "safe",
+                "subclass": subclass,
+                "applied_policies": policies,
+                "raw_output": response
+            }
         }
 
 
     app.include_router(router)
     return app
-
-
-# @app.local_entrypoint()
-# def main():
-#     model = Model()
-#     model.generate.remote()
