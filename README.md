@@ -59,7 +59,6 @@ from guardrails.hub import LlamaGuard7B
 
 guard = Guard().use(
     LlamaGuard7B, 
-    validation_endpoint="https://guardrails--fa-hg-lg7b.modal.run/v1/chat/classification", 
     policies=[LlamaGuard7B.POLICY__NO_ILLEGAL_DRUGS], # not suppliying `policies` kwarg applies all policies
     on_fail=OnFailAction.EXCEPTION
 )
