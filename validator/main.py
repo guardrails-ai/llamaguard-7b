@@ -1,6 +1,5 @@
 import json
 from typing import Any, Callable, Dict, List, Optional
-from enum import Enum
 from guardrails.validator_base import ErrorSpan
 
 from guardrails.validator_base import (
@@ -10,15 +9,6 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-from guardrails.logger import logger
-
-class Policies(str, Enum):
-    NO_VIOLENCE_HATE = "O1"
-    NO_SEXUAL_CONTENT = "O2"
-    NO_CRIMINAL_PLANNING = "O3"
-    NO_GUNS_AND_ILLEGAL_WEAPONS = "O4"
-    NO_ILLEGAL_DRUGS = "O5"
-    NO_ENOURAGE_SELF_HARM = "O6"
 
 @register_validator(name="guardrails/llamaguard_7b", data_type="string")
 class LlamaGuard7B(Validator):
@@ -34,28 +24,33 @@ class LlamaGuard7B(Validator):
     | Programmatic fix              | None                              |
 
     Args:
-        policies (List[Policies]): List of LlamaGuard7B.Policies enum values to enforce. 
+        policies (List[str]): A list of policies that can be any `LlamaGuard7B.POLICY__*` constants.
         score_threshold (float): Threshold score for the classification. If the score is above this threshold, the input is considered unsafe.
     """  # noqa
 
-    Policies = Policies
+
+    POLICY__NO_VIOLENCE_HATE = "O1"
+    POLICY__NO_SEXUAL_CONTENT = "O2"
+    POLICY__NO_CRIMINAL_PLANNING = "O3"
+    POLICY__NO_GUNS_AND_ILLEGAL_WEAPONS = "O4"
+    POLICY__NO_ILLEGAL_DRUGS = "O5"
+    POLICY__NO_ENOURAGE_SELF_HARM = "O6"
 
     def __init__(
         self,
-        policies: Optional[List[Policies]] = None,
+        policies: Optional[List[str]] = None,
         validation_method: Optional[str] = "full",
         on_fail: Optional[Callable] = None,
+        **kwargs,
     ):
 
         super().__init__(
             on_fail=on_fail,
             validation_method=validation_method,
+            **kwargs,
         )
 
-        try:
-            self._policies = [policy.value for policy in policies] if policies else []
-        except AttributeError as e:
-            raise ValueError("Invalid policies provided. Please provide a list of LlamaGuard7B.Policies enum values.") from e
+        self._policies = policies
         
 
     def validate(self, value: Any, metadata: Dict = {}) -> ValidationResult:
@@ -74,8 +69,17 @@ class LlamaGuard7B(Validator):
                 reason=f"Unsafe content: {value}",
             )
 
+            # iterate over self to find any POLICY__* attributes
+
             find_policy_violated = next(
-                (policy for policy in self.Policies if policy.value == subclass),
+                (policy_key for policy_key in [
+                    "POLICY__NO_VIOLENCE_HATE",
+                    "POLICY__NO_CRIMINAL_PLANNING",
+                    "POLICY__NO_GUNS_AND_ILLEGAL_WEAPONS",
+                    "POLICY__NO_ILLEGAL_DRUGS",
+                    "POLICY__NO_ENOURAGE_SELF_HARM",
+                    "POLICY__NO_SEXUAL_CONTENT"
+                ] if getattr(self,policy_key) == subclass),
                 None
             )
             return FailResult(
