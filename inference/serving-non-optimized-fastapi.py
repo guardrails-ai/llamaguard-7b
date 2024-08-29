@@ -53,9 +53,6 @@ class Model:
 
     @modal.method()
     def generate(self, chat):
-        import torch
-        from torch.nn.functional import softmax
-
         tokenizer = self.tokenizer
         model = self.model
 
