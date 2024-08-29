@@ -1,3 +1,3 @@
-from .main import ValidatorTemplate
+from .main import LlamaGuard7B
 
-__all__ = ["ValidatorTemplate"]
+__all__ = ["LlamaGuard7B"]
