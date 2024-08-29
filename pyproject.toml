@@ -1,6 +1,6 @@
 [project]
-name = "validator-template"
-version = "0.0.0"
+name = "llamaguard-7b
+version = "0.0.1"
 description = "Template repo for Guardrails Hub validators."
 authors = [
     {name = "Guardrails AI", email = "contact@guardrailsai.com"}
@@ -28,3 +28,6 @@ testpaths = [
 
 [tool.pyright]
 include = ["validator"]
+
+[tool.setuptools.packages.find]
+include = ["validator", "inference", "validator.*", "inference.*"]
