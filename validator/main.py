@@ -39,14 +39,13 @@ class LlamaGuard7B(Validator):
     def __init__(
         self,
         policies: Optional[List[str]] = None,
-        validation_method: Optional[str] = "full",
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
 
         super().__init__(
+            policies=policies,
             on_fail=on_fail,
-            validation_method=validation_method,
             **kwargs,
         )
 
