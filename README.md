@@ -4,7 +4,6 @@
 | --- | --- |
 | Date of development | Aug 15, 2024 |
 | Validator type | Moderation |
-| Blog |  |
 | License | Apache 2 |
 | Input/Output | Output |
 
@@ -12,7 +11,7 @@
 
 ### Intended Use
 
-> ⚠️ This validator is a remote inference only validator so remote inferencing must be enabled during `guardrails configure`
+⚠️ This validator is a remote inference only validator so remote inferencing must be enabled during `guardrails configure`
 
 This validator is for usage for moderating both user prompts and LLM output responses to prevent harmful topics from surfacing in both scenarios. It is based on [LlamaGuard 7B](https://huggingface.co/meta-llama/LlamaGuard-7b) which is in turn based on [LLama 2](https://arxiv.org/abs/2307.09288).
 
@@ -86,12 +85,14 @@ Expected: Validation failed for field with errors: Prompt contains unsafe conten
 # API Reference
 
 **`__init__(self, on_fail="noop")`**
+
 <ul>
 Initializes a new instance of the `LlamaGuard7B` class.
 
 **Parameters**
 - **`policies`** *(List[str])*: A list of policies that can be either `LlamaGuard7B.POLICY__NO_VIOLENCE_HATE`, `LlamaGuard7B.POLICY__NO_SEXUAL_CONTENT`, `LlamaGuard7B.POLICY__NO_CRIMINAL_PLANNING`, `LlamaGuard7B.POLICY__NO_GUNS_AND_ILLEGAL_WEAPONS`, `LlamaGuard7B.POLICY__NO_ILLEGAL_DRUGS`, and `LlamaGuard7B.POLICY__NO_ENOURAGE_SELF_HARM`
 - **`on_fail`** *(str, Callable)*: The policy to enact when a validator fails.  If `str`, must be one of `reask`, `fix`, `filter`, `refrain`, `noop`, `exception` or `fix_reask`. Otherwise, must be a function that is called when the validator fails.
+
 </ul>
 <br/>
 
