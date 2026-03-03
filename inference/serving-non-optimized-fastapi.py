@@ -28,12 +28,12 @@ app = modal.App(f"{MODEL_ALIAS}-non-optimized", image=image)
 
 
 try:
-    volume = modal.Volume.lookup(VOLUME_NAME, create_if_missing=False)
+    volume = modal.Volume.from_name(VOLUME_NAME, create_if_missing=False)
 except modal.exception.NotFoundError:
     raise Exception("Download models first with modal run download_model.py")
 
 
-GPU_CONFIG = modal.gpu.A10G(count=1)
+GPU_CONFIG = "A10G"
 
 
 @app.cls(gpu=GPU_CONFIG, secrets=[modal.Secret.from_name("huggingface-secret")], volumes={MODELS_DIR: volume},)
@@ -82,12 +82,12 @@ class Model:
             ray.shutdown()
 
 @app.function(
-    keep_warm=1,
-    allow_concurrent_inputs=10,
+    min_containers=1,
     timeout=60 * 10,
     secrets=[modal.Secret.from_dotenv()],
     volumes={MODELS_DIR: volume}
 )
+@modal.concurrent(max_inputs=10)
 @modal.asgi_app(label="fa-hg-lg7b")
 def tgi_app():
     import os
@@ -170,6 +170,10 @@ def tgi_app():
         policies: Optional[List[str]] = None
         chat: List[ChatMessages]
 
+    @app.get("/v1/health-check")
+    async def health_check():
+        return {"status": "ok"}
+
   
     @router.post("/v1/chat/classification")
     async def chat_classification_response(body: ChatClassificationRequestBody):
@@ -178,7 +182,7 @@ def tgi_app():
 
         print("Serving request for chat classification...")
         print(f"Chat: {chat}")
-        response = Model().generate.remote(chat)
+        response = await Model().generate.remote.aio(chat)
 
         is_unsafe = None
         subclass = None
